@@ -104,20 +104,6 @@ class Tokenizer(object):
         return pad_and_truncate(sequence, self.max_seq_len, padding=padding, truncating=truncating)
 
 
-class Tokenizer4Bert:
-    def __init__(self, max_seq_len, pretrained_bert_name):
-        self.tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
-        self.max_seq_len = max_seq_len
-
-    def text_to_sequence(self, text, reverse=False, padding='post', truncating='post'):
-        sequence = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(text))
-        if len(sequence) == 0:
-            sequence = [0]
-        if reverse:
-            sequence = sequence[::-1]
-        return pad_and_truncate(sequence, self.max_seq_len, padding=padding, truncating=truncating)
-
-
 class ABSADataset(Dataset):
     def __init__(self, fname, tokenizer):
         fin = open(fname, 'r', encoding='utf-8', newline='\n', errors='ignore')
@@ -204,4 +190,11 @@ class ABSADataset(Dataset):
             }
 
             all_data.append(data)
-       
+        self.data = all_data
+
+    def __getitem__(self, index):
+        return self.data[index]
+
+    def __len__(self):
+        return len(self.data)  # Ensure this returns the number of samples in the dataset
+
