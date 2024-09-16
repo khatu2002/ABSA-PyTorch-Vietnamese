@@ -183,7 +183,7 @@ def main():
     # Hyper Parameters
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', default='bert_spc', type=str)
-    parser.add_argument('--dataset', default='laptop', type=str, help='twitter, restaurant, laptop')
+    parser.add_argument('--dataset', default='comment', type=str, help='comment')
     parser.add_argument('--optimizer', default='adam', type=str)
     parser.add_argument('--initializer', default='xavier_uniform_', type=str)
     parser.add_argument('--lr', default=2e-5, type=float, help='try 5e-5, 2e-5 for BERT, 1e-3 for others')
@@ -243,15 +243,15 @@ def main():
         'comment': {
             'train': './datasets/comment/train.raw',
             'test': './datasets/comment/test.raw'
-        },
-        'restaurant': {
-            'train': './datasets/semeval14/Restaurants_Train.xml.seg',
-            'test': './datasets/semeval14/Restaurants_Test_Gold.xml.seg'
-        },
-        'laptop': {
-            'train': './datasets/semeval14/Laptops_Train.xml.seg',
-            'test': './datasets/semeval14/Laptops_Test_Gold.xml.seg'
         }
+        # 'restaurant': {
+        #     'train': './datasets/semeval14/Restaurants_Train.xml.seg',
+        #     'test': './datasets/semeval14/Restaurants_Test_Gold.xml.seg'
+        # },
+        # 'laptop': {
+        #     'train': './datasets/semeval14/Laptops_Train.xml.seg',
+        #     'test': './datasets/semeval14/Laptops_Test_Gold.xml.seg'
+        # }
     }
     input_colses = {
         'lstm': ['text_indices'],
