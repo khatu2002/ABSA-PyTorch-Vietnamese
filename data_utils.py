@@ -47,7 +47,7 @@ def build_embedding_matrix(word2idx, embed_dim, dat_fname):
         print('loading word vectors...')
         embedding_matrix = np.zeros((len(word2idx) + 2, embed_dim))  # idx 0 and len(word2idx)+1 are all-zeros
         fname = './glove.twitter.27B/glove.twitter.27B.' + str(embed_dim) + 'd.txt' \
-            if embed_dim != 300 else './glove.6B.300d'
+            if embed_dim != 300 else './glove.6B.300d.txt'
         word_vec = _load_word_vec(fname, word2idx=word2idx, embed_dim=embed_dim)
         print('building embedding_matrix:', dat_fname)
         for word, i in word2idx.items():
