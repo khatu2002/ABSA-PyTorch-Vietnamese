@@ -147,7 +147,7 @@ if __name__ == '__main__':
     opt.dataset_file = dataset_files[opt.dataset]
     opt.inputs_cols = input_colses[opt.model_name]
     # set your trained models here
-    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.7868'
+    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.766'
     opt.embed_dim = 300
     opt.hidden_dim = 300
     opt.max_seq_len = 85
