@@ -112,15 +112,15 @@ if __name__ == '__main__':
         'comment': {
             'train': './datasets/comment/train.raw',
             'test': './datasets/comment/test.raw'
-        },
-        'restaurant': {
-            'train': './datasets/semeval14/Restaurants_Train.xml.seg',
-            'test': './datasets/semeval14/Restaurants_Test_Gold.xml.seg'
-        },
-        'laptop': {
-            'train': './datasets/semeval14/Laptops_Train.xml.seg',
-            'test': './datasets/semeval14/Laptops_Test_Gold.xml.seg'
         }
+        # 'restaurant': {
+        #     'train': './datasets/semeval14/Restaurants_Train.xml.seg',
+        #     'test': './datasets/semeval14/Restaurants_Test_Gold.xml.seg'
+        # },
+        # 'laptop': {
+        #     'train': './datasets/semeval14/Laptops_Train.xml.seg',
+        #     'test': './datasets/semeval14/Laptops_Test_Gold.xml.seg'
+        # }
     }
     input_colses = {
         'lstm': ['text_indices'],
@@ -160,5 +160,5 @@ if __name__ == '__main__':
     opt.SRD = 3
 
     inf = Inferer(opt)
-    t_probs = inf.evaluate('the service is terrible', 'service')
+    t_probs = inf.evaluate('Đóng gói cẩn thận ', 'Đóng gói')
     print(t_probs.argmax(axis=-1) - 1)
