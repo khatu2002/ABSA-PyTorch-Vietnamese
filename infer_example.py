@@ -143,7 +143,7 @@ if __name__ == '__main__':
     opt = Option()
     opt.model_name = 'ian'
     opt.model_class = model_classes[opt.model_name]
-    opt.dataset = 'restaurant'
+    opt.dataset = 'comment'
     opt.dataset_file = dataset_files[opt.dataset]
     opt.inputs_cols = input_colses[opt.model_name]
     # set your trained models here
