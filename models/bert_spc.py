@@ -10,12 +10,19 @@ class BERT_SPC(nn.Module):
 
     def forward(self, inputs):
         text_bert_indices, bert_segments_ids = inputs[0], inputs[1]
+        
         # Kiểm tra kiểu dữ liệu đầu vào
         print("Kiểu của text_bert_indices:", type(text_bert_indices))
         print("Kiểu của bert_segments_ids:", type(bert_segments_ids))
         
         # Lấy đầu ra từ mô hình BERT
-        _, pooled_output = self.bert(text_bert_indices, token_type_ids=bert_segments_ids)
+        outputs = self.bert(text_bert_indices, token_type_ids=bert_segments_ids)
+        
+        # Kiểm tra kiểu dữ liệu đầu ra từ BERT
+        print("Kiểu của outputs:", type(outputs))
+        
+        # Thay đổi này để phù hợp với cấu trúc của đầu ra
+        pooled_output = outputs.pooler_output  # Dựa vào cấu trúc của outputs
         
         # Kiểm tra kiểu dữ liệu đầu ra từ BERT
         print("Kiểu của pooled_output trước dropout:", type(pooled_output))
