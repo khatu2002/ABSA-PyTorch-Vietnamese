@@ -1,10 +1,10 @@
+
 import os
 import pickle
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from transformers.models.bert.modeling_bert import BertPooler, BertSelfAttention
-
+from transformers import BertTokenizer
 
 
 def build_tokenizer(fnames, max_seq_len, dat_fname):
