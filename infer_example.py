@@ -109,9 +109,9 @@ if __name__ == '__main__':
         'lcf_bert': LCF_BERT,
     }
     dataset_files = {
-        'twitter': {
-            'train': './datasets/acl-14-short-data/train.raw',
-            'test': './datasets/acl-14-short-data/test.raw'
+        'comment': {
+            'train': './datasets/comment/train.raw',
+            'test': './datasets/comment/test.raw'
         },
         'restaurant': {
             'train': './datasets/semeval14/Restaurants_Train.xml.seg',
