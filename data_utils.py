@@ -157,8 +157,8 @@ class ABSADataset(Dataset):
 
 
 
-            dependency_graph = np.pad(idx2graph[i], ((0, max(0, desired_padding)), (0, max(0, desired_padding))), mode='constant')
-
+            dependency_graph = np.pad(idx2graph[i], \
+                ((0,tokenizer.max_seq_len-idx2graph[i].shape[0]),(0,tokenizer.max_seq_len-idx2graph[i].shape[0])), 'constant')
 
             data = {
                 'concat_bert_indices': concat_bert_indices,
