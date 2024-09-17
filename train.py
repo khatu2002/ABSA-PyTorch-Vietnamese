@@ -14,6 +14,9 @@ import numpy
 from sklearn import metrics
 from time import strftime, localtime
 
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
+
 from transformers import BertModel
 
 import torch
@@ -160,7 +163,17 @@ class Instructor:
 
         acc = n_correct / n_total
         f1 = metrics.f1_score(t_targets_all.cpu(), torch.argmax(t_outputs_all, -1).cpu(), labels=[0, 1, 2], average='macro')
+        
+        # Compute confusion matrix
+        conf_matrix = confusion_matrix(t_targets_all.cpu(), torch.argmax(t_outputs_all, -1).cpu(), labels=[0, 1, 2])
+        self.plot_confusion_matrix(conf_matrix, labels=[0, 1, 2])
+
         return acc, f1
+
+    def plot_confusion_matrix(self, conf_matrix, labels):
+        disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=labels)
+        disp.plot(cmap=plt.cm.Blues)
+        plt.show()
 
     def run(self):
         # Loss and Optimizer
