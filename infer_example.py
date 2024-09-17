@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
-# file: infer_example.py
-# author: songyouwei <youwei0314@gmail.com>
-# fixed: yangheng <yangheng@m.scnu.edu.cn>
-# Copyright (C) 2019. All Rights Reserved.
-
 import torch
 import torch.nn.functional as F
 import argparse
 import numpy as np
+import spacy
+import re
 
 from data_utils import build_tokenizer, build_embedding_matrix, Tokenizer4Bert, pad_and_truncate
 from models import LSTM, IAN, MemNet, RAM, TD_LSTM, TC_LSTM, Cabasc, ATAE_LSTM, TNet_LF, AOA, MGAN, ASGCN, LCF_BERT
@@ -18,7 +14,7 @@ from dependency_graph import dependency_adj_matrix
 from transformers import BertModel
 
 class Inferer:
-    """A simple inference example"""
+    """A simple inference example with aspect extraction"""
     def __init__(self, opt):
         self.opt = opt
         if 'bert' in opt.model_name:
@@ -41,9 +37,32 @@ class Inferer:
         # switch model to evaluation mode
         self.model.eval()
         torch.autograd.set_grad_enabled(False)
+        # Load spaCy model for aspect extraction
+        self.nlp = spacy.load('en_core_web_sm')  # Replace with appropriate Vietnamese model if needed
 
-    def evaluate(self, text, aspect):
-        aspect = aspect.lower().strip()
+    def extract_aspect(self, sentence):
+
+        # Example: Use a simple rule-based or keyword matching to extract the aspect
+        # Define known aspect-related words or patterns
+        aspect_keywords = ['đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng']  # Add more known aspects
+
+        # Tokenize the sentence
+        tokens = sentence.lower().split()
+
+        # Search for aspect keywords in the tokenized sentence
+        for keyword in aspect_keywords:
+            if re.search(rf'\b{keyword}\b', sentence.lower()):
+                return keyword
+        
+        return None  # If no aspect is found
+    def evaluate(self, text):
+        aspect = self.extract_aspect(text)
+        if not aspect:
+            print("No aspect found in the sentence.")
+            return None
+
+        print(f"Extracted aspect: {aspect}")
+        
         text_left, _, text_right = [s.strip() for s in text.lower().partition(aspect)]
         
         text_indices = self.tokenizer.text_to_sequence(text_left + " " + aspect + " " + text_right)
@@ -113,14 +132,6 @@ if __name__ == '__main__':
             'train': './datasets/comment/train.raw',
             'test': './datasets/comment/test.raw'
         }
-        # 'restaurant': {
-        #     'train': './datasets/semeval14/Restaurants_Train.xml.seg',
-        #     'test': './datasets/semeval14/Restaurants_Test_Gold.xml.seg'
-        # },
-        # 'laptop': {
-        #     'train': './datasets/semeval14/Laptops_Train.xml.seg',
-        #     'test': './datasets/semeval14/Laptops_Test_Gold.xml.seg'
-        # }
     }
     input_colses = {
         'lstm': ['text_indices'],
@@ -139,15 +150,17 @@ if __name__ == '__main__':
         'aen_bert': ['text_bert_indices', 'aspect_bert_indices'],
         'lcf_bert': ['concat_bert_indices', 'concat_segments_indices', 'text_bert_indices', 'aspect_bert_indices'],
     }
-    class Option(object): pass
+
+    class Option(object):
+        pass
+
     opt = Option()
     opt.model_name = 'bert_spc'
     opt.model_class = model_classes[opt.model_name]
     opt.dataset = 'comment'
     opt.dataset_file = dataset_files[opt.dataset]
     opt.inputs_cols = input_colses[opt.model_name]
-    # set your trained models here
-    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.766'
+    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.7868'
     opt.embed_dim = 300
     opt.hidden_dim = 300
     opt.max_seq_len = 85
@@ -158,7 +171,29 @@ if __name__ == '__main__':
     opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     opt.local_context_focus = 'cdm'
     opt.SRD = 3
+    opt.dropout = 0.1
 
+    # Create an Inferer instance
     inf = Inferer(opt)
-    t_probs = inf.evaluate('Đóng gói cẩn thận ', 'Đóng gói')
-    print(t_probs.argmax(axis=-1) - 1)
+
+    # Test with an example sentence
+    sentence = 'hàng ok'
+    aspect = inf.extract_aspect(sentence)
+
+    if aspect:
+        print(f"Extracted aspect: {aspect}")
+    else:
+        print("No aspect extracted")
+
+    # Evaluate the sentiment
+    t_probs = inf.evaluate(sentence)
+    pred_labels = t_probs.argmax(axis=-1) - 1
+
+        # Ví dụ kiểm tra kết quả
+    for i, label in enumerate(pred_labels):
+        if label == 1:
+            print(f"Prediction: Positive")
+        elif label == -1:
+            print(f"Prediction: Negative")
+        else:
+            print(f"Prediction: Neutral")
