@@ -101,7 +101,7 @@ if __name__ == '__main__':
         'ram': RAM,
         'cabasc': Cabasc,
         'tnet_lf': TNet_LF,
-       'aoa': AOA,
+        'aoa': AOA,
         'mgan': MGAN,
         'asgcn': ASGCN,
         'bert_spc': BERT_SPC,
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     }
     class Option(object): pass
     opt = Option()
-    opt.model_name = 'ian'
+    opt.model_name = 'bert_spc'
     opt.model_class = model_classes[opt.model_name]
     opt.dataset = 'comment'
     opt.dataset_file = dataset_files[opt.dataset]
