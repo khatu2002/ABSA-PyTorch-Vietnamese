@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-# file: atae-lstm
-# author: songyouwei <youwei0314@gmail.com>
-# Copyright (C) 2018. All Rights Reserved.
+
 from layers.attention import Attention, NoQueryAttention
 from layers.dynamic_rnn import DynamicLSTM
 import torch
@@ -33,10 +30,12 @@ class ATAE_LSTM(nn.Module):
         aspect = aspect_pool.unsqueeze(1).expand(-1, x_len_max, -1)
         x = torch.cat((aspect, x), dim=-1)
 
-        h, (_, _) = self.lstm(x, x_len)
+        # Ensure x_len is on CPU and of type int64
+        h, (_, _) = self.lstm(x, x_len.cpu().to(torch.int64))
         ha = torch.cat((h, aspect), dim=-1)
         _, score = self.attention(ha)
         output = torch.squeeze(torch.bmm(score, h), dim=1)
 
         out = self.dense(output)
         return out
+
