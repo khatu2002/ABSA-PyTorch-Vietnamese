@@ -19,6 +19,10 @@ class LSTM(nn.Module):
         text_raw_indices = inputs[0]
         x = self.embed(text_raw_indices)
         x_len = torch.sum(text_raw_indices != 0, dim=-1)
+
+        # Ensure x_len is a CPU tensor before passing it to the LSTM
+        x_len = x_len.cpu()
+
         _, (h_n, _) = self.lstm(x, x_len)
         out = self.dense(h_n[0])
         return out
