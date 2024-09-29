@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import argparse
 import numpy as np
-import spacy
+#import spacy
 import re
 
 from data_utils import build_tokenizer, build_embedding_matrix, Tokenizer4Bert, pad_and_truncate
@@ -38,13 +38,13 @@ class Inferer:
         self.model.eval()
         torch.autograd.set_grad_enabled(False)
         # Load spaCy model for aspect extraction
-        self.nlp = spacy.load('en_core_web_sm')  # Replace with appropriate Vietnamese model if needed
+        #self.nlp = spacy.load('en_core_web_sm')  # Replace with appropriate Vietnamese model if needed
 
     def extract_aspect(self, sentence):
 
         # Example: Use a simple rule-based or keyword matching to extract the aspect
         # Define known aspect-related words or patterns
-        aspect_keywords = ['đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng']  # Add more known aspects
+        aspect_keywords = ['đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng', 'sản phẩm','máy', 'phục vụ']  # Add more known aspects
 
         # Tokenize the sentence
         tokens = sentence.lower().split()
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     opt.dataset = 'comment'
     opt.dataset_file = dataset_files[opt.dataset]
     opt.inputs_cols = input_colses[opt.model_name]
-    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.7868'
+    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.7938'
     opt.embed_dim = 300
     opt.hidden_dim = 300
     opt.max_seq_len = 85
@@ -177,9 +177,9 @@ if __name__ == '__main__':
     inf = Inferer(opt)
 
     # Test with an example sentence
-    sentence = 'hàng ok'
+    sentence = 'hàng chắc chắn'
     aspect = inf.extract_aspect(sentence)
-
+    print(f"sentence: {sentence}")
     if aspect:
         print(f"Extracted aspect: {aspect}")
     else:
