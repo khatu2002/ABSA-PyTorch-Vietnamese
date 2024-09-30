@@ -12,6 +12,7 @@ from models.bert_spc import BERT_SPC
 from dependency_graph import dependency_adj_matrix
 
 from transformers import BertModel
+import argparse
 
 class Inferer:
     """A simple inference example with aspect extraction"""
@@ -43,23 +44,27 @@ class Inferer:
 
     def extract_aspect(self, sentence):
 
-        # Example: Use a simple rule-based or keyword matching to extract the aspect
         # Define known aspect-related words or patterns
-        aspect_keywords = ['giao hàng','đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng', 'sản phẩm', 'máy', 'phục vụ']  # Add more known aspects
+        aspect_keywords = ['giao hàng', 'đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng', 'sản phẩm', 'máy', 'phục vụ', 'hộp']
+
+        # Sort aspect keywords by length in descending order to prioritize longer phrases first
+        aspect_keywords = sorted(aspect_keywords, key=len, reverse=True)
 
         # Tokenize the sentence
-        tokens = sentence.lower().split()
+        sentence_lower = sentence.lower()
 
         # Create a list to store found aspects
         found_aspects = []
 
-        # Search for aspect keywords in the tokenized sentence
+        # Search for aspect keywords in the sentence
         for keyword in aspect_keywords:
-            if re.search(rf'\b{keyword}\b', sentence.lower()):
-                found_aspects.append(keyword)  # Add the found aspect to the list
+            if re.search(rf'\b{keyword}\b', sentence_lower):
+                # If the keyword is not a part of any already found aspect, add it
+                if not any(keyword in aspect for aspect in found_aspects):
+                    found_aspects.append(keyword)
 
         # Return the list of found aspects
-        return found_aspects if found_aspects else None  # Return None if no aspect is found
+        return found_aspects if found_aspects else None
 
     def evaluate(self, text, aspect):
         aspect = aspect.lower().strip()
@@ -110,6 +115,10 @@ class Inferer:
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--sentence', type=str, required=True, help='Input sentence for aspect extraction and sentiment analysis')
+    args = parser.parse_args()
+
     model_classes = {
         'lstm': LSTM,
         'td_lstm': TD_LSTM,
@@ -176,8 +185,8 @@ if __name__ == '__main__':
     # Create an Inferer instance
     inf = Inferer(opt)
 
-    sentence = 'hàng chắc chắn, đóng gói kĩ, giao hàng rất nhanh.'
-
+    # Sử dụng câu truyền từ dòng lệnh
+    sentence = args.sentence.lower()
     print(f"sentence: {sentence}")
 
     # Giả sử inf.extract_aspect trả về danh sách các khía cạnh từ câu
