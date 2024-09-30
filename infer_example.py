@@ -40,21 +40,27 @@ class Inferer:
         # Load spaCy model for aspect extraction
         #self.nlp = spacy.load('en_core_web_sm')  # Replace with appropriate Vietnamese model if needed
 
+
     def extract_aspect(self, sentence):
 
         # Example: Use a simple rule-based or keyword matching to extract the aspect
         # Define known aspect-related words or patterns
-        aspect_keywords = ['đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng', 'sản phẩm','máy', 'phục vụ']  # Add more known aspects
+        aspect_keywords = ['đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng', 'sản phẩm', 'máy', 'phục vụ']  # Add more known aspects
 
         # Tokenize the sentence
         tokens = sentence.lower().split()
 
+        # Create a list to store found aspects
+        found_aspects = []
+
         # Search for aspect keywords in the tokenized sentence
         for keyword in aspect_keywords:
             if re.search(rf'\b{keyword}\b', sentence.lower()):
-                return keyword
-        
-        return None  # If no aspect is found
+                found_aspects.append(keyword)  # Add the found aspect to the list
+
+        # Return the list of found aspects
+        return found_aspects if found_aspects else None  # Return None if no aspect is found
+
     def evaluate(self, text):
         aspect = self.extract_aspect(text)
         if not aspect:
@@ -176,24 +182,28 @@ if __name__ == '__main__':
     # Create an Inferer instance
     inf = Inferer(opt)
 
-    # Test with an example sentence
-    sentence = 'hàng chắc chắn'
-    aspect = inf.extract_aspect(sentence)
+    sentence = 'hàng chắc chắn, đóng gói kĩ, giao hàng rất nhanh.'
+
     print(f"sentence: {sentence}")
-    if aspect:
-        print(f"Extracted aspect: {aspect}")
+
+    # Giả sử inf.extract_aspect trả về danh sách các khía cạnh từ câu
+    aspects = inf.extract_aspect(sentence)
+
+    if aspects:
+        for aspect in aspects:
+            print(f"Extracted aspect: {aspect}")
+            
+            # Evaluate the sentiment cho từng khía cạnh
+            t_probs = inf.evaluate(sentence)
+            pred_labels = t_probs.argmax(axis=-1) - 1
+
+            # Kiểm tra kết quả dự đoán
+            for i, label in enumerate(pred_labels):
+                if label == 1:
+                    print(f"Prediction for aspect '{aspect}': Positive")
+                elif label == -1:
+                    print(f"Prediction for aspect '{aspect}': Negative")
+                else:
+                    print(f"Prediction for aspect '{aspect}': Neutral")
     else:
         print("No aspect extracted")
-
-    # Evaluate the sentiment
-    t_probs = inf.evaluate(sentence)
-    pred_labels = t_probs.argmax(axis=-1) - 1
-
-        # Ví dụ kiểm tra kết quả
-    for i, label in enumerate(pred_labels):
-        if label == 1:
-            print(f"Prediction: Positive")
-        elif label == -1:
-            print(f"Prediction: Negative")
-        else:
-            print(f"Prediction: Neutral")
