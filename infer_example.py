@@ -45,7 +45,7 @@ class Inferer:
 
         # Example: Use a simple rule-based or keyword matching to extract the aspect
         # Define known aspect-related words or patterns
-        aspect_keywords = ['đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng', 'sản phẩm', 'máy', 'phục vụ']  # Add more known aspects
+        aspect_keywords = ['giao hàng','đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng', 'sản phẩm', 'máy', 'phục vụ']  # Add more known aspects
 
         # Tokenize the sentence
         tokens = sentence.lower().split()
@@ -61,14 +61,8 @@ class Inferer:
         # Return the list of found aspects
         return found_aspects if found_aspects else None  # Return None if no aspect is found
 
-    def evaluate(self, text):
-        aspect = self.extract_aspect(text)
-        if not aspect:
-            print("No aspect found in the sentence.")
-            return None
-
-        print(f"Extracted aspect: {aspect}")
-        
+    def evaluate(self, text, aspect):
+        aspect = aspect.lower().strip()
         text_left, _, text_right = [s.strip() for s in text.lower().partition(aspect)]
         
         text_indices = self.tokenizer.text_to_sequence(text_left + " " + aspect + " " + text_right)
@@ -166,7 +160,7 @@ if __name__ == '__main__':
     opt.dataset = 'comment'
     opt.dataset_file = dataset_files[opt.dataset]
     opt.inputs_cols = input_colses[opt.model_name]
-    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.7938'
+    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.7636'
     opt.embed_dim = 300
     opt.hidden_dim = 300
     opt.max_seq_len = 85
@@ -194,16 +188,18 @@ if __name__ == '__main__':
             print(f"Extracted aspect: {aspect}")
             
             # Evaluate the sentiment cho từng khía cạnh
-            t_probs = inf.evaluate(sentence)
+            t_probs = inf.evaluate(sentence,aspect)
             pred_labels = t_probs.argmax(axis=-1) - 1
 
             # Kiểm tra kết quả dự đoán
             for i, label in enumerate(pred_labels):
+                aspect_index = i + 1  # Bắt đầu đếm từ 1 thay vì 0
                 if label == 1:
-                    print(f"Prediction for aspect '{aspect}': Positive")
+                    print(f"Prediction for aspect {aspect_index} ('{aspect}'): Positive")
                 elif label == -1:
-                    print(f"Prediction for aspect '{aspect}': Negative")
+                    print(f"Prediction for aspect {aspect_index} ('{aspect}'): Negative")
                 else:
-                    print(f"Prediction for aspect '{aspect}': Neutral")
+                    print(f"Prediction for aspect {aspect_index} ('{aspect}'): Neutral")
+
     else:
         print("No aspect extracted")
