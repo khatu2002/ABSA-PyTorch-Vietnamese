@@ -46,8 +46,10 @@ def build_embedding_matrix(word2idx, embed_dim, dat_fname):
     else:
         print('loading word vectors...')
         embedding_matrix = np.zeros((len(word2idx) + 2, embed_dim))  # idx 0 and len(word2idx)+1 are all-zeros
-        fname = './glove.twitter.27B/glove.twitter.27B.' + str(embed_dim) + 'd.txt' \
-            if embed_dim != 300 else './glove.6B.300d.txt'
+        fname = './cc.vi.300.vec' \
+        # Kiểm tra xem embed_dim có khớp với file bạn đang sử dụng (FastText với 300 dimensions)
+        if embed_dim != 300:
+            raise ValueError(f"Embedding dimension không khớp. FastText cho tiếng Việt có 300 dimensions, nhưng bạn đang dùng {embed_dim}.")
         word_vec = _load_word_vec(fname, word2idx=word2idx, embed_dim=embed_dim)
         print('building embedding_matrix:', dat_fname)
         for word, i in word2idx.items():
@@ -135,7 +137,6 @@ class ABSADataset(Dataset):
             # Handling text and aspect indices
             text_indices = tokenizer.text_to_sequence(text_left + " " + aspect + " " + text_right)
             text_indices = text_indices[:tokenizer.max_seq_len]  # Truncate if longer than max_seq_len
-
             context_indices = tokenizer.text_to_sequence(text_left + " " + text_right)
             context_indices = context_indices[:tokenizer.max_seq_len]
 
@@ -153,7 +154,6 @@ class ABSADataset(Dataset):
 
             aspect_indices = tokenizer.text_to_sequence(aspect)
             aspect_indices = aspect_indices[:tokenizer.max_seq_len]
-
             left_len = np.sum(left_indices != 0)
             aspect_len = np.sum(aspect_indices != 0)
             aspect_boundary = np.asarray([left_len, left_len + aspect_len - 1], dtype=np.int64)
@@ -210,4 +210,3 @@ class ABSADataset(Dataset):
 
     def __len__(self):
         return len(self.data)  # Ensure this returns the number of samples in the dataset
-

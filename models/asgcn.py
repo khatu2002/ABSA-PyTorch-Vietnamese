@@ -43,39 +43,104 @@ class ASGCN(nn.Module):
         self.fc = nn.Linear(2*opt.hidden_dim, opt.polarities_dim)
         self.text_embed_dropout = nn.Dropout(0.3)
 
+    # def position_weight(self, x, aspect_double_idx, text_len, aspect_len):
+    #     batch_size = x.shape[0]
+    #     seq_len = x.shape[1]
+    #     aspect_double_idx = aspect_double_idx.cpu().numpy()
+    #     text_len = text_len.cpu().numpy()
+    #     aspect_len = aspect_len.cpu().numpy()
+    #     weight = [[] for i in range(batch_size)]
+    #     for i in range(batch_size):
+    #         context_len = text_len[i] - aspect_len[i]
+    #         for j in range(aspect_double_idx[i,0]):
+    #             weight[i].append(1-(aspect_double_idx[i,0]-j)/context_len)
+    #         for j in range(aspect_double_idx[i,0], aspect_double_idx[i,1]+1):
+    #             weight[i].append(0)
+    #         for j in range(aspect_double_idx[i,1]+1, text_len[i]):
+    #             weight[i].append(1-(j-aspect_double_idx[i,1])/context_len)
+    #         for j in range(text_len[i], seq_len):
+    #             weight[i].append(0)
+    #     weight = torch.tensor(weight, dtype=torch.float).unsqueeze(2).to(self.opt.device)
+    #     return weight*x
     def position_weight(self, x, aspect_double_idx, text_len, aspect_len):
         batch_size = x.shape[0]
         seq_len = x.shape[1]
         aspect_double_idx = aspect_double_idx.cpu().numpy()
         text_len = text_len.cpu().numpy()
         aspect_len = aspect_len.cpu().numpy()
-        weight = [[] for i in range(batch_size)]
+        
+        weight = []
         for i in range(batch_size):
             context_len = text_len[i] - aspect_len[i]
-            for j in range(aspect_double_idx[i,0]):
-                weight[i].append(1-(aspect_double_idx[i,0]-j)/context_len)
-            for j in range(aspect_double_idx[i,0], aspect_double_idx[i,1]+1):
-                weight[i].append(0)
-            for j in range(aspect_double_idx[i,1]+1, text_len[i]):
-                weight[i].append(1-(j-aspect_double_idx[i,1])/context_len)
-            for j in range(text_len[i], seq_len):
-                weight[i].append(0)
+            current_weight = []
+            
+            for j in range(aspect_double_idx[i, 0]):
+                current_weight.append(1 - (aspect_double_idx[i, 0] - j) / context_len)
+            
+            for j in range(aspect_double_idx[i, 0], aspect_double_idx[i, 1] + 1):
+                current_weight.append(0)
+            
+            for j in range(aspect_double_idx[i, 1] + 1, text_len[i]):
+                current_weight.append(1 - (j - aspect_double_idx[i, 1]) / context_len)
+            
+            # Fill remaining sequence length with zeros if necessary
+            while len(current_weight) < seq_len:
+                current_weight.append(0)
+            
+            # Trim if the length is too long
+            current_weight = current_weight[:seq_len]
+            
+            weight.append(current_weight)
+        
         weight = torch.tensor(weight, dtype=torch.float).unsqueeze(2).to(self.opt.device)
-        return weight*x
+        return weight * x
 
+    # def mask(self, x, aspect_double_idx):
+    #     batch_size, seq_len = x.shape[0], x.shape[1]
+    #     aspect_double_idx = aspect_double_idx.cpu().numpy()
+    #     mask = [[] for i in range(batch_size)]
+    #     for i in range(batch_size):
+    #         for j in range(aspect_double_idx[i,0]):
+    #             mask[i].append(0)
+    #         for j in range(aspect_double_idx[i,0], aspect_double_idx[i,1]+1):
+    #             mask[i].append(1)
+    #         for j in range(aspect_double_idx[i,1]+1, seq_len):
+    #             mask[i].append(0)
+    #     mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2).to(self.opt.device)
+    #     return mask*x
     def mask(self, x, aspect_double_idx):
         batch_size, seq_len = x.shape[0], x.shape[1]
         aspect_double_idx = aspect_double_idx.cpu().numpy()
-        mask = [[] for i in range(batch_size)]
+        
+        mask = []
         for i in range(batch_size):
-            for j in range(aspect_double_idx[i,0]):
-                mask[i].append(0)
-            for j in range(aspect_double_idx[i,0], aspect_double_idx[i,1]+1):
-                mask[i].append(1)
-            for j in range(aspect_double_idx[i,1]+1, seq_len):
-                mask[i].append(0)
+            current_mask = []
+            
+            # Add 0s before the aspect
+            for j in range(aspect_double_idx[i, 0]):
+                current_mask.append(0)
+            
+            # Add 1s for the aspect span
+            for j in range(aspect_double_idx[i, 0], aspect_double_idx[i, 1] + 1):
+                current_mask.append(1)
+            
+            # Add 0s after the aspect
+            for j in range(aspect_double_idx[i, 1] + 1, seq_len):
+                current_mask.append(0)
+            
+            # Adjust the length dynamically
+            # If the current mask is shorter, pad with 0s
+            while len(current_mask) < seq_len:
+                current_mask.append(0)
+            
+            # If it's longer, truncate to the correct length
+            current_mask = current_mask[:seq_len]
+            
+            mask.append(current_mask)
+        
         mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2).to(self.opt.device)
-        return mask*x
+        return mask * x
+    
 
     def forward(self, inputs):
         text_indices, aspect_indices, left_indices, adj = inputs

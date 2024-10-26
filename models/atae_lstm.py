@@ -22,7 +22,7 @@ class ATAE_LSTM(nn.Module):
         x_len = torch.sum(text_indices != 0, dim=-1)
         x_len_max = torch.max(x_len)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1).float()
-
+        aspect_len[aspect_len == 0] = 1.0  # Tránh chia cho 0
         x = self.embed(text_indices)
         x = self.squeeze_embedding(x, x_len)
         aspect = self.embed(aspect_indices)
@@ -38,4 +38,3 @@ class ATAE_LSTM(nn.Module):
 
         out = self.dense(output)
         return out
-

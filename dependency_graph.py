@@ -18,7 +18,8 @@ class WhitespaceTokenizer(object):
         spaces = [True] * len(words)
         return Doc(self.vocab, words=words, spaces=spaces)
 
-nlp = spacy.load('en_core_web_sm')
+#nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load("xx_ent_wiki_sm")
 nlp.tokenizer = WhitespaceTokenizer(nlp.vocab)
 
 def dependency_adj_matrix(text):
@@ -62,4 +63,3 @@ if __name__ == '__main__':
     # process('./datasets/semeval14/Restaurants_Test_Gold.xml.seg')
     # process('./datasets/semeval14/Laptops_Train.xml.seg')
     # process('./datasets/semeval14/Laptops_Test_Gold.xml.seg')
-

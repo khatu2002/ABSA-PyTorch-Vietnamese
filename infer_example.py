@@ -10,6 +10,7 @@ from models import LSTM, IAN, MemNet, RAM, TD_LSTM, TC_LSTM, Cabasc, ATAE_LSTM, 
 from models.aen import CrossEntropyLoss_LSR, AEN_BERT
 from models.bert_spc import BERT_SPC
 from dependency_graph import dependency_adj_matrix
+from models.roberta import RoBERTa 
 
 from transformers import BertModel
 import argparse
@@ -33,7 +34,7 @@ class Inferer:
                 dat_fname='{0}_{1}_embedding_matrix.dat'.format(str(opt.embed_dim), opt.dataset))
             self.model = opt.model_class(embedding_matrix, opt)
         print('loading model {0} ...'.format(opt.model_name))
-        self.model.load_state_dict(torch.load(opt.state_dict_path))
+        self.model.load_state_dict(torch.load(opt.state_dict_path, weights_only=True))
         self.model = self.model.to(opt.device)
         # switch model to evaluation mode
         self.model.eval()
@@ -43,9 +44,16 @@ class Inferer:
 
 
     def extract_aspect(self, sentence):
+        with open('aspect_dict.txt', 'r', encoding='utf-8') as file:
+            aspect_dict = file.readlines()
 
+        # Xử lý các khía cạnh (loại bỏ dấu câu, chuẩn hóa và chuyển về chữ thường nếu cần)
+        processed_aspects = [re.sub(r'[^\w\s]', '', aspect.strip()) for aspect in aspect_dict]
+
+        # Tạo mảng aspect_keywords
+        aspect_keywords = processed_aspects
         # Define known aspect-related words or patterns
-        aspect_keywords = ['giao hàng', 'đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng', 'sản phẩm', 'máy', 'phục vụ', 'hộp']
+        # aspect_keywords = ['giao hàng', 'đóng gói', 'chất lượng', 'giá', 'dung lượng', 'màn hình', 'pin', 'hàng', 'sản phẩm', 'máy', 'phục vụ', 'hộp']
 
         # Sort aspect keywords by length in descending order to prioritize longer phrases first
         aspect_keywords = sorted(aspect_keywords, key=len, reverse=True)
@@ -88,7 +96,7 @@ class Inferer:
 
         text_bert_indices = self.tokenizer.text_to_sequence("[CLS] " + text_left + " " + aspect + " " + text_right + " [SEP]")
         aspect_bert_indices = self.tokenizer.text_to_sequence("[CLS] " + aspect + " [SEP]")
-
+        # input_ids, attention_masks = self.tokenizer.tokenize_roberta("<s> " + text_left + " " + aspect + " " + text_right + " </s>", 512) 
         dependency_graph = dependency_adj_matrix(text)
 
         data = {
@@ -105,9 +113,13 @@ class Inferer:
             'aspect_indices': aspect_indices,
             'aspect_boundary': aspect_boundary,
             'dependency_graph': dependency_graph,
+            # 'input_ids':input_ids,
+            # 'attention_masks':attention_masks,
         }
 
         t_inputs = [torch.tensor([data[col]], device=self.opt.device) for col in self.opt.inputs_cols]
+        #t_inputs = torch.tensor(np.array([data[col] for col in self.opt.inputs_cols]), device=self.opt.device)
+
         t_outputs = self.model(t_inputs)
         t_probs = F.softmax(t_outputs, dim=-1).cpu().numpy()
 
@@ -135,6 +147,7 @@ if __name__ == '__main__':
         'bert_spc': BERT_SPC,
         'aen_bert': AEN_BERT,
         'lcf_bert': LCF_BERT,
+        'roberta': RoBERTa
     }
     dataset_files = {
         'comment': {
@@ -169,19 +182,19 @@ if __name__ == '__main__':
     opt.dataset = 'comment'
     opt.dataset_file = dataset_files[opt.dataset]
     opt.inputs_cols = input_colses[opt.model_name]
-    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.7636'
+    opt.state_dict_path = 'state_dict/bert_spc_comment_val_acc_0.8308'
     opt.embed_dim = 300
     opt.hidden_dim = 300
     opt.max_seq_len = 85
     opt.bert_dim = 768
-    opt.pretrained_bert_name = 'bert-base-uncased'
+    opt.pretrained_bert_name = 'google-bert/bert-base-multilingual-uncased'
     opt.polarities_dim = 3
     opt.hops = 3
     opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     opt.local_context_focus = 'cdm'
     opt.SRD = 3
     opt.dropout = 0.1
-
+    # opt.pretrained_roberta_name = 'roberta-base'
     # Create an Inferer instance
     inf = Inferer(opt)
 

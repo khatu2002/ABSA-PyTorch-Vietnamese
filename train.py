@@ -18,6 +18,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 
 from transformers import BertModel
+from transformers import BertForSequenceClassification
 
 import torch
 import torch.nn as nn
@@ -95,6 +96,8 @@ class Instructor:
         max_val_epoch = 0
         global_step = 0
         path = None
+        #torch.autograd.set_detect_anomaly(True)
+
         for i_epoch in range(self.opt.num_epoch):
             logger.info('>' * 100)
             logger.info('epoch: {}'.format(i_epoch))
@@ -107,11 +110,17 @@ class Instructor:
                 optimizer.zero_grad()
 
                 inputs = [batch[col].to(self.opt.device) for col in self.opt.inputs_cols]
-                outputs = self.model(inputs)
-                targets = batch['polarity'].to(self.opt.device)
 
+                outputs = self.model(inputs)
+                #                 # Kiểm tra giá trị đầu ra
+                # if torch.any(torch.isnan(outputs)) or torch.any(torch.isinf(outputs)):
+                #     print("Output contains NaN or Inf")
+                targets = batch['polarity'].to(self.opt.device)
                 loss = criterion(outputs, targets)
                 loss.backward()
+                
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+
                 optimizer.step()
 
                 n_correct += (torch.argmax(outputs, -1) == targets).sum().item()
@@ -166,14 +175,10 @@ class Instructor:
         
         # Compute confusion matrix
         conf_matrix = confusion_matrix(t_targets_all.cpu(), torch.argmax(t_outputs_all, -1).cpu(), labels=[0, 1, 2])
-        self.plot_confusion_matrix(conf_matrix, labels=[0, 1, 2])
-
-        return acc, f1
-
-    def plot_confusion_matrix(self, conf_matrix, labels):
-        disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=labels)
-        disp.plot(cmap=plt.cm.Blues)
-        plt.show()
+        #self.plot_confusion_matrix(conf_matrix, labels=[0, 1, 2])
+        print(conf_matrix)
+        return acc, f1     
+    
 
     def run(self):
         # Loss and Optimizer
@@ -187,13 +192,10 @@ class Instructor:
 
         self._reset_params()
         best_model_path = self._train(criterion, optimizer, train_data_loader, val_data_loader)
-        self.model.load_state_dict(torch.load(best_model_path))
+        self.model.load_state_dict(torch.load(best_model_path, weights_only=True))
         test_acc, test_f1 = self._evaluate_acc_f1(test_data_loader)
         # logger.info('>> test_acc: {:.4f}, test_f1: {:.4f}'.format(test_acc, test_f1))
         print('>> test_acc: {:.4f}, test_f1: {:.4f}'.format(test_acc, test_f1))
-
-
-
 def main():
     # Hyper Parameters
     parser = argparse.ArgumentParser()
@@ -210,7 +212,8 @@ def main():
     parser.add_argument('--embed_dim', default=300, type=int)
     parser.add_argument('--hidden_dim', default=300, type=int)
     parser.add_argument('--bert_dim', default=768, type=int)
-    parser.add_argument('--pretrained_bert_name', default='bert-base-uncased', type=str)
+    # parser.add_argument('--pretrained_bert_name', default='bert-base-uncased', type=str)
+    parser.add_argument('--pretrained_bert_name', default='google-bert/bert-base-multilingual-uncased', type=str)
     parser.add_argument('--max_seq_len', default=85, type=int)
     parser.add_argument('--polarities_dim', default=3, type=int)
     parser.add_argument('--hops', default=3, type=int)
@@ -222,7 +225,10 @@ def main():
     parser.add_argument('--local_context_focus', default='cdm', type=str, help='local context focus mode, cdw or cdm')
     parser.add_argument('--SRD', default=3, type=int, help='semantic-relative-distance, see the paper of LCF-BERT model')
     opt = parser.parse_args()
-
+    if opt.model_name.lower() == 'atae_lstm':
+         opt.lr = 5e-5
+         opt.dropout = 0.5
+    #     opt.l2reg = 1e-4
     if opt.seed is not None:
         random.seed(opt.seed)
         numpy.random.seed(opt.seed)
@@ -289,6 +295,7 @@ def main():
         'xavier_uniform_': torch.nn.init.xavier_uniform_,
         'xavier_normal_': torch.nn.init.xavier_normal_,
         'orthogonal_': torch.nn.init.orthogonal_,
+        'kaiming_normal_' : torch.nn.init.kaiming_normal_,
     }
     optimizers = {
         'adadelta': torch.optim.Adadelta,  # default lr=1.0

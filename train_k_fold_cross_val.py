@@ -13,6 +13,7 @@ import numpy
 
 from sklearn import metrics
 from time import strftime, localtime
+from sklearn.metrics import confusion_matrix
 
 from transformers import BertModel
 
@@ -157,6 +158,10 @@ class Instructor:
 
         acc = n_correct / n_total
         f1 = metrics.f1_score(t_targets_all.cpu(), torch.argmax(t_outputs_all, -1).cpu(), labels=[0, 1, 2], average='macro')
+        # Compute confusion matrix
+        conf_matrix = confusion_matrix(t_targets_all.cpu(), torch.argmax(t_outputs_all, -1).cpu(), labels=[0, 1, 2])
+        #self.plot_confusion_matrix(conf_matrix, labels=[0, 1, 2])
+        print(conf_matrix)
         return acc, f1
 
     def run(self):
@@ -214,7 +219,7 @@ def main():
     parser.add_argument('--patience', default=5, type=int)
     parser.add_argument('--device', default=None, type=str, help='e.g. cuda:0')
     parser.add_argument('--seed', default=1234, type=int, help='set seed for reproducibility')
-    parser.add_argument('--cross_val_fold', default=10, type=int, help='k-fold cross validation')
+    parser.add_argument('--cross_val_fold', default=5, type=int, help='k-fold cross validation')
     # The following parameters are only valid for the lcf-bert model
     parser.add_argument('--local_context_focus', default='cdm', type=str, help='local context focus mode, cdw or cdm')
     parser.add_argument('--SRD', default=3, type=int, help='semantic-relative-distance, see the paper of LCF-BERT model')
@@ -252,18 +257,22 @@ def main():
         # num epochs: 5
     }
     dataset_files = {
-        'twitter': {
-            'train': './datasets/acl-14-short-data/train.raw',
-            'test': './datasets/acl-14-short-data/test.raw'
-        },
-        'restaurant': {
-            'train': './datasets/semeval14/Restaurants_Train.xml.seg',
-            'test': './datasets/semeval14/Restaurants_Test_Gold.xml.seg'
-        },
-        'laptop': {
-            'train': './datasets/semeval14/Laptops_Train.xml.seg',
-            'test': './datasets/semeval14/Laptops_Test_Gold.xml.seg'
-        }
+        'comment': {
+            'train': './datasets/comment/train.raw',
+            'test': './datasets/comment/test.raw'
+        }        
+        # 'twitter': {
+        #     'train': './datasets/acl-14-short-data/train.raw',
+        #     'test': './datasets/acl-14-short-data/test.raw'
+        # },
+        # 'restaurant': {
+        #     'train': './datasets/semeval14/Restaurants_Train.xml.seg',
+        #     'test': './datasets/semeval14/Restaurants_Test_Gold.xml.seg'
+        # },
+        # 'laptop': {
+        #     'train': './datasets/semeval14/Laptops_Train.xml.seg',
+        #     'test': './datasets/semeval14/Laptops_Test_Gold.xml.seg'
+        # }
     }
     input_colses = {
         'lstm': ['text_indices'],
